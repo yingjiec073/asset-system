@@ -1,22 +1,19 @@
-import axios from 'axios'
+import http from './http'
 
-const vehicleApi = axios.create({
-  baseURL: 'http://localhost:8080/api/vehicles',
-  timeout: 10000
-})
+const BASE = '/api/vehicles'
 
 export function getVehicles(params = {}) {
-  return vehicleApi.get('', { params })
+  return http.get(BASE, { params })
 }
 
 export function createVehicle(data) {
-  return vehicleApi.post('', data)
+  return http.post(BASE, data)
 }
 
 export function updateVehicle(id, data) {
-  return vehicleApi.put(`/${id}`, data)
+  return http.put(`${BASE}/${id}`, data)
 }
 
 export function deleteVehicle(id) {
-  return vehicleApi.delete(`/${id}`)
+  return http.delete(`${BASE}/${id}`)
 }
