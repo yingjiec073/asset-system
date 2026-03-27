@@ -17,3 +17,76 @@ CREATE TABLE IF NOT EXISTS vehicle (
     KEY idx_department_id (department_id),
     KEY idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='车辆资产表';
+
+CREATE TABLE IF NOT EXISTS asset (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL COMMENT '资产名称',
+    category VARCHAR(30) NOT NULL COMMENT '分类 VEHICLE/COMPUTER/DEVICE/FURNITURE',
+    brand VARCHAR(50) NULL COMMENT '品牌',
+    model VARCHAR(80) NULL COMMENT '型号',
+    serial_number VARCHAR(80) NOT NULL COMMENT '资产编号',
+    purchase_date DATE NOT NULL COMMENT '采购日期',
+    purchase_price DECIMAL(12,2) NOT NULL COMMENT '采购价格',
+    status VARCHAR(30) NOT NULL COMMENT 'IN_STOCK/IN_USE/IN_MAINTENANCE/SCRAPPED',
+    department_id BIGINT NOT NULL COMMENT '所属部门',
+    location VARCHAR(255) NULL COMMENT '存放位置',
+    extra_fields JSON NULL COMMENT '扩展字段',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_serial_number (serial_number),
+    KEY idx_asset_category (category),
+    KEY idx_asset_status (status),
+    KEY idx_asset_department (department_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='统一资产主表';
+
+CREATE TABLE IF NOT EXISTS asset_category (
+    id BIGINT PRIMARY KEY,
+    code VARCHAR(30) NOT NULL,
+    name VARCHAR(60) NOT NULL,
+    description VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_asset_category_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资产分类配置';
+
+CREATE TABLE IF NOT EXISTS asset_operation (
+    id BIGINT PRIMARY KEY,
+    asset_id BIGINT NOT NULL,
+    type VARCHAR(30) NOT NULL COMMENT 'CHECKOUT/RETURN/TRANSFER/MAINTENANCE/SCRAP/INVENTORY',
+    operator VARCHAR(50) NOT NULL,
+    time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    remark VARCHAR(500) NULL,
+    KEY idx_asset_operation_asset_id (asset_id),
+    KEY idx_asset_operation_type (type),
+    CONSTRAINT fk_asset_operation_asset FOREIGN KEY (asset_id) REFERENCES asset(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资产操作日志';
+
+CREATE TABLE IF NOT EXISTS maintenance_order (
+    id BIGINT PRIMARY KEY,
+    asset_id BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL COMMENT 'PENDING/IN_PROGRESS/COMPLETED',
+    issue VARCHAR(500) NULL,
+    record VARCHAR(500) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_maintenance_order_asset_id (asset_id),
+    CONSTRAINT fk_maintenance_order_asset FOREIGN KEY (asset_id) REFERENCES asset(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='维修工单';
+
+CREATE TABLE IF NOT EXISTS inventory_task (
+    id BIGINT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    remark VARCHAR(500) NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盘点任务';
+
+CREATE TABLE IF NOT EXISTS inventory_record (
+    id BIGINT PRIMARY KEY,
+    task_id BIGINT NOT NULL,
+    asset_id BIGINT NOT NULL,
+    result VARCHAR(20) NOT NULL COMMENT 'NORMAL/LOST/ABNORMAL',
+    remark VARCHAR(255) NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_inventory_record_task_id (task_id),
+    KEY idx_inventory_record_asset_id (asset_id),
+    CONSTRAINT fk_inventory_record_task FOREIGN KEY (task_id) REFERENCES inventory_task(id),
+    CONSTRAINT fk_inventory_record_asset FOREIGN KEY (asset_id) REFERENCES asset(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盘点记录';

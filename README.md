@@ -1,246 +1,96 @@
 # asset-system
 
-资产管理系统后端（车辆资产模块），基于 **Java 17 + Spring Boot 3 + MyBatis-Plus + MySQL + Maven**。
+基于 **Spring Boot 3 + MyBatis-Plus + MySQL + Vue3 + Vite** 的简化版企业资产管理系统（EAM）。
 
-## 1. 项目结构
+> 在原有车辆资产 CRUD 的基础上扩展为多资产统一平台，覆盖资产全生命周期：**入库 → 使用 → 维修 → 调拨 → 报废 → 盘点**。
+
+## 功能总览
+
+### 后端（已实现）
+
+- 统一资产台账：`/api/assets`（支持类型筛选、关键字搜索、分页）
+- 分类管理：`/api/assets/categories`
+- 仪表盘统计：`/api/assets/dashboard`
+- 资产操作流：`/api/asset-operations`（领用/归还/调拨/维修/报废/盘点日志）
+- 维修管理：`/api/maintenance`
+- 报废管理：`/api/scrap`
+- 盘点管理：`/api/inventory/tasks`、`/api/inventory/records`
+- 兼容原车辆模块：`/api/vehicles`
+
+### 前端（新增目录 `frontend/`）
+
+- 菜单：仪表盘、资产列表、车辆管理、电脑/设备/家具预留、资产操作、盘点管理
+- 页面目录：
+  - `src/views/dashboard`
+  - `src/views/assets`
+  - `src/views/vehicles`
+  - `src/views/operations`
+  - `src/views/inventory`
+- 通用组件：统一表格、表单弹窗、状态标签
+- API 模块：`src/api/asset.js`、`src/api/vehicle.js`、`src/api/operation.js`
+
+## 项目结构
 
 ```text
 asset-system
-├── pom.xml
-├── sql
-│   └── vehicle.sql
-└── src
-    └── main
-        ├── java/com/example/assetsystem
-        │   ├── AssetSystemApplication.java
-        │   ├── config
-        │   │   └── MybatisPlusMetaObjectHandler.java
-        │   ├── controller
-        │   │   ├── GlobalExceptionHandler.java
-        │   │   └── VehicleController.java
-        │   ├── dto
-        │   │   └── ApiResponse.java
-        │   ├── entity
-        │   │   └── Vehicle.java
-        │   ├── mapper
-        │   │   └── VehicleMapper.java
-        │   └── service
-        │       ├── VehicleService.java
-        │       └── impl
-        │           └── VehicleServiceImpl.java
-        └── resources
-            └── application.yml
+├── sql/vehicle.sql
+├── src/main/java/com/example/assetsystem
+│   ├── common                 # 枚举定义
+│   ├── config                 # MyBatis Plus 配置、自动填充
+│   ├── controller             # 资产/操作/维修/盘点/报废/车辆接口
+│   ├── dto                    # 通用响应 + 查询/请求 DTO
+│   ├── entity                 # asset/operation/maintenance/inventory/vehicle 实体
+│   ├── mapper
+│   └── service
+└── frontend
+    ├── package.json
+    ├── src
+    │   ├── api
+    │   ├── components
+    │   └── views
+    └── vite.config.js
 ```
 
-## 2. 数据库建表 SQL
+## 数据库
 
-执行：`sql/vehicle.sql`
+执行 `sql/vehicle.sql`，包含：
 
-```sql
-CREATE DATABASE IF NOT EXISTS asset_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE asset_system;
+- 保留 `vehicle` 表
+- 新增 `asset` 主表
+- 新增 `asset_category` 分类表
+- 新增 `asset_operation` 操作日志表
+- 新增 `maintenance_order` 维修工单表
+- 新增 `inventory_task` / `inventory_record` 盘点表
 
-CREATE TABLE IF NOT EXISTS vehicle (
-    id BIGINT PRIMARY KEY,
-    plate_number VARCHAR(20) NOT NULL COMMENT '车牌号',
-    vin VARCHAR(50) NOT NULL COMMENT '车架号',
-    brand VARCHAR(50) NOT NULL COMMENT '品牌',
-    model VARCHAR(50) NOT NULL COMMENT '型号',
-    purchase_date DATE NOT NULL COMMENT '购买日期',
-    purchase_price DECIMAL(12,2) NOT NULL COMMENT '购买价格',
-    status VARCHAR(20) NOT NULL COMMENT '状态（在用/维修/闲置/报废）',
-    department_id BIGINT NOT NULL COMMENT '部门ID',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    UNIQUE KEY uk_plate_number (plate_number),
-    UNIQUE KEY uk_vin (vin),
-    KEY idx_department_id (department_id),
-    KEY idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='车辆资产表';
-```
+## 启动
 
-## 3. 启动方式
+### 后端
 
-1. 修改数据库连接（`src/main/resources/application.yml`）：
-   - `spring.datasource.url`
-   - `spring.datasource.username`
-   - `spring.datasource.password`
-2. 创建数据库并执行建表 SQL。
-3. 启动项目：
+1. 修改 `src/main/resources/application.yml` 数据库连接
+2. 初始化数据库 SQL
+3. 启动：
 
 ```bash
 mvn spring-boot:run
 ```
 
-默认端口：`8080`
-
-## 4. RESTful 接口
-
-### 4.1 查询列表
-- **GET** `/api/vehicles`
-
-示例请求：
+### 前端
 
 ```bash
-curl -X GET http://localhost:8080/api/vehicles
+cd frontend
+npm install
+npm run dev
 ```
 
-示例返回：
+## 生命周期状态约束（核心）
 
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": [
-    {
-      "id": 1912345678901234567,
-      "plateNumber": "粤A12345",
-      "vin": "LDC613P23A1305189",
-      "brand": "Toyota",
-      "model": "Corolla",
-      "purchaseDate": "2024-05-10",
-      "purchasePrice": 125000.00,
-      "status": "在用",
-      "departmentId": 1001,
-      "createdAt": "2026-03-27T09:30:12"
-    }
-  ]
-}
-```
+- `CHECKOUT`：`IN_STOCK -> IN_USE`
+- `RETURN`：`IN_USE -> IN_STOCK`
+- `TRANSFER`：跨部门变更 `departmentId`
+- `MAINTENANCE`：变更状态为 `IN_MAINTENANCE`
+- `SCRAP`：变更状态为 `SCRAPPED` 且后续禁止业务操作
+- `INVENTORY`：记录盘点日志
 
-### 4.2 查询详情
-- **GET** `/api/vehicles/{id}`
+## 注意
 
-示例请求：
-
-```bash
-curl -X GET http://localhost:8080/api/vehicles/1912345678901234567
-```
-
-示例返回：
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": {
-    "id": 1912345678901234567,
-    "plateNumber": "粤A12345",
-    "vin": "LDC613P23A1305189",
-    "brand": "Toyota",
-    "model": "Corolla",
-    "purchaseDate": "2024-05-10",
-    "purchasePrice": 125000.00,
-    "status": "在用",
-    "departmentId": 1001,
-    "createdAt": "2026-03-27T09:30:12"
-  }
-}
-```
-
-### 4.3 新增车辆
-- **POST** `/api/vehicles`
-
-示例请求：
-
-```bash
-curl -X POST http://localhost:8080/api/vehicles \
-  -H "Content-Type: application/json" \
-  -d '{
-    "plateNumber": "沪B56789",
-    "vin": "LSVAB1234F2187654",
-    "brand": "BYD",
-    "model": "秦PLUS",
-    "purchaseDate": "2025-01-15",
-    "purchasePrice": 109800.00,
-    "status": "在用",
-    "departmentId": 1002
-  }'
-```
-
-示例返回：
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": {
-    "id": 1912345678901234568,
-    "plateNumber": "沪B56789",
-    "vin": "LSVAB1234F2187654",
-    "brand": "BYD",
-    "model": "秦PLUS",
-    "purchaseDate": "2025-01-15",
-    "purchasePrice": 109800.00,
-    "status": "在用",
-    "departmentId": 1002,
-    "createdAt": "2026-03-27T10:01:08"
-  }
-}
-```
-
-### 4.4 修改车辆
-- **PUT** `/api/vehicles/{id}`
-
-示例请求：
-
-```bash
-curl -X PUT http://localhost:8080/api/vehicles/1912345678901234568 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "plateNumber": "沪B56789",
-    "vin": "LSVAB1234F2187654",
-    "brand": "BYD",
-    "model": "秦PLUS DM-i",
-    "purchaseDate": "2025-01-15",
-    "purchasePrice": 112800.00,
-    "status": "维修",
-    "departmentId": 1002
-  }'
-```
-
-示例返回：
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": {
-    "id": 1912345678901234568,
-    "plateNumber": "沪B56789",
-    "vin": "LSVAB1234F2187654",
-    "brand": "BYD",
-    "model": "秦PLUS DM-i",
-    "purchaseDate": "2025-01-15",
-    "purchasePrice": 112800.00,
-    "status": "维修",
-    "departmentId": 1002,
-    "createdAt": "2026-03-27T10:01:08"
-  }
-}
-```
-
-### 4.5 删除车辆
-- **DELETE** `/api/vehicles/{id}`
-
-示例请求：
-
-```bash
-curl -X DELETE http://localhost:8080/api/vehicles/1912345678901234568
-```
-
-示例返回：
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": null
-}
-```
-
-## 5. created_at 自动填充说明
-
-- `Vehicle.createdAt` 使用 `@TableField(fill = FieldFill.INSERT)` 标记。
-- `MybatisPlusMetaObjectHandler` 在插入时自动填充 `LocalDateTime.now()`。
-
-> 新增接口无需传 `createdAt` 字段，后端会自动赋值。
+当前环境中 `mvn test` 受 Maven Central 403 限制，无法完成依赖下载。
