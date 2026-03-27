@@ -64,6 +64,7 @@ public class VehicleController {
                     .body(ApiResponse.fail("车辆不存在"));
         }
         vehicle.setId(id);
+        vehicle.setCreatedAt(null);
         boolean updated = vehicleService.updateById(vehicle);
         if (!updated) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
