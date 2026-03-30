@@ -90,3 +90,84 @@ CREATE TABLE IF NOT EXISTS inventory_record (
     CONSTRAINT fk_inventory_record_task FOREIGN KEY (task_id) REFERENCES inventory_task(id),
     CONSTRAINT fk_inventory_record_asset FOREIGN KEY (asset_id) REFERENCES asset(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盘点记录';
+
+CREATE TABLE IF NOT EXISTS user_account (
+    id BIGINT PRIMARY KEY,
+    username VARCHAR(60) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(100),
+    enabled TINYINT NOT NULL DEFAULT 1,
+    UNIQUE KEY uk_user_account_username (username)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户账号';
+
+CREATE TABLE IF NOT EXISTS role (
+    id BIGINT PRIMARY KEY,
+    code VARCHAR(80) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    UNIQUE KEY uk_role_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色';
+
+CREATE TABLE IF NOT EXISTS permission (
+    id BIGINT PRIMARY KEY,
+    code VARCHAR(80) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    UNIQUE KEY uk_permission_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='权限';
+
+CREATE TABLE IF NOT EXISTS role_permission (
+    id BIGINT PRIMARY KEY,
+    role_id BIGINT NOT NULL,
+    permission_id BIGINT NOT NULL,
+    KEY idx_rp_role_id (role_id),
+    KEY idx_rp_permission_id (permission_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关系';
+
+CREATE TABLE IF NOT EXISTS user_role (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    KEY idx_ur_user_id (user_id),
+    KEY idx_ur_role_id (role_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户角色关系';
+
+CREATE TABLE IF NOT EXISTS workflow (
+    id BIGINT PRIMARY KEY,
+    code VARCHAR(80) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    UNIQUE KEY uk_workflow_code (code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批流程';
+
+CREATE TABLE IF NOT EXISTS workflow_step (
+    id BIGINT PRIMARY KEY,
+    workflow_id BIGINT NOT NULL,
+    step_order INT NOT NULL,
+    approver_role_code VARCHAR(80) NOT NULL,
+    KEY idx_workflow_step_workflow (workflow_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='流程步骤';
+
+CREATE TABLE IF NOT EXISTS approval (
+    id BIGINT PRIMARY KEY,
+    workflow_id BIGINT NOT NULL,
+    business_id BIGINT NOT NULL,
+    business_type VARCHAR(80) NOT NULL,
+    current_step_order INT NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    requester_id BIGINT NOT NULL,
+    reason VARCHAR(500),
+    acted_by BIGINT,
+    action_comment VARCHAR(500),
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_approval_workflow_id (workflow_id),
+    KEY idx_approval_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审批实例';
+
+CREATE TABLE IF NOT EXISTS audit_log (
+    id BIGINT PRIMARY KEY,
+    user_id BIGINT,
+    action VARCHAR(120) NOT NULL,
+    details TEXT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_audit_user_id (user_id),
+    KEY idx_audit_action (action)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志';

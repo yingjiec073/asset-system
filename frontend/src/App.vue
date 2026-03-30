@@ -1,16 +1,12 @@
 <template>
   <div class="layout">
     <aside>
-      <h3>EAM 菜单</h3>
+      <h3>Enterprise EAM</h3>
       <ul>
-        <li><RouterLink to="/dashboard">仪表盘</RouterLink></li>
-        <li><RouterLink to="/assets">资产列表</RouterLink></li>
-        <li><RouterLink to="/vehicles">车辆管理</RouterLink></li>
-        <li><RouterLink to="/computers">电脑管理（预留）</RouterLink></li>
-        <li><RouterLink to="/devices">设备管理（预留）</RouterLink></li>
-        <li><RouterLink to="/furniture">家具管理（预留）</RouterLink></li>
-        <li><RouterLink to="/operations">资产操作</RouterLink></li>
-        <li><RouterLink to="/inventory">盘点管理</RouterLink></li>
+        <li><RouterLink to="/dashboard">Dashboard</RouterLink></li>
+        <li><RouterLink to="/modules/assets">modules/assets</RouterLink></li>
+        <li><RouterLink to="/modules/users">modules/users</RouterLink></li>
+        <li><RouterLink to="/modules/approvals">approvals</RouterLink></li>
       </ul>
     </aside>
     <main><RouterView /></main>
