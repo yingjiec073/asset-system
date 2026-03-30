@@ -94,3 +94,25 @@ npm run dev
 ## 注意
 
 当前环境中 `mvn test` 受 Maven Central 403 限制，无法完成依赖下载。
+
+## Enterprise Enhancement (v1)
+
+新增企业化能力：
+
+- API 版本化：统一新接口位于 `/api/v1/*`
+- 统一响应：`{ code, message, data }`
+- RBAC：角色、权限、角色权限、用户角色 + `@RequirePermission` 中间件
+- 审批流：`workflow / workflow_step / approval`，支持多级审批
+- Excel：资产导入/导出（Apache POI）
+- 审计日志：登录、资产变更、审批动作写入 `audit_log`
+- 安全：BCrypt 密码哈希、JWT access/refresh、基础限流
+- 配置：`application-dev.yml`、`application-prod.yml` + `.env.example`
+- 前端：模块化目录（`modules/assets`、`modules/users`）、Pinia 全局状态、路由与按钮级权限渲染
+- 部署：`Dockerfile.backend`、`frontend/Dockerfile`、`docker-compose.yml`
+
+### 快速初始化
+
+1. 导入 `sql/vehicle.sql`
+2. 导入 `scripts/seed.sql`
+3. 拷贝 `.env.example` 为 `.env` 并修改配置
+
